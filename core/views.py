@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus
-from .forms import TeamRegistrationForm
+from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus, ChatMessage
+from .forms import TeamRegistrationForm, ChatMessageForm
 
 
 def home(request):
@@ -109,4 +109,35 @@ def statistics(request):
         'stats': stats,
         'checkpoints': checkpoints,
         'event': event,
+    })
+
+@login_required
+def team_chat(request, team_id):
+    """Чат поддержки для команды"""
+    team = get_object_or_404(Team, id=team_id)
+
+    if request.user != team.captain and request.user not in team.members.all() and not request.user.is_staff:
+        messages.error(request, 'У вас нет доступа к этому чату.')
+        return redirect('core:home')
+
+    if request.method == 'POST':
+        form = ChatMessageForm(request.POST)
+        if form.is_valid():
+            ChatMessage.objects.create(
+                team=team,
+                sender=request.user,
+                text=form.cleaned_data['text'],
+                is_admin=request.user.is_staff
+            )
+            messages.success(request, 'Сообщение отправлено')
+            return redirect('core:team_chat', team_id=team.id)
+    else:
+        form = ChatMessageForm()
+
+    messages_qs = team.chat_messages.all().order_by('created_at')
+
+    return render(request, 'core/team_chat.html', {
+        'team': team,
+        'chat_messages': messages_qs,
+        'form': form,
     })

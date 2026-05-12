@@ -37,3 +37,14 @@ class TeamRegistrationForm(forms.ModelForm):
         else:
             self.fields['selected_case'].required = False
             self.fields['selected_case'].help_text = 'Можно выбрать позже'
+
+class ChatMessageForm(forms.Form):
+    """Форма отправки сообщения в чат"""
+    text = forms.CharField(
+        label="",
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Введите сообщение...',
+            'class': 'form-control'
+        })
+    )

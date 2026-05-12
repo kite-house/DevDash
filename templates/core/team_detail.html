@@ -28,6 +28,10 @@
                         <span class="badge bg-danger">Выбыла</span>
                         {% endif %}
                     </p>
+
+                    <a href="{% url 'core:team_chat' team.id %}" class="btn btn-outline-primary">
+                        💬 Чат поддержки
+                    </a>
                 </div>
             </div>
         </div>

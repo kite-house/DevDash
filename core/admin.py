@@ -2,7 +2,8 @@ import openpyxl
 from django.http import HttpResponse
 from django.contrib import admin
 from django.utils import timezone
-from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus
+
+from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus, ChatMessage
 
 
 # ==================== INLINES ====================
@@ -119,3 +120,17 @@ class TeamCheckPointStatusAdmin(admin.ModelAdmin):
     list_display = ['team', 'checkpoint', 'is_passed', 'passed_at']
     list_filter = ['is_passed', 'checkpoint']
     search_fields = ['team__name']
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ['team', 'sender', 'text_preview', 'is_admin', 'created_at']
+    list_filter = ['is_admin', 'team', 'created_at']
+    search_fields = ['text', 'team__name', 'sender__username']
+    readonly_fields = ['team', 'sender', 'text', 'is_admin', 'created_at']
+
+    def text_preview(self, obj):
+        return obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
+    text_preview.short_description = "Сообщение"
+
+    def has_add_permission(self, request):
+        return False  # Только через сайт
