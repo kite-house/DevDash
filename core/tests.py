@@ -3,7 +3,10 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import User
+from django.core.cache import cache
+
 from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus, ChatMessage
+
 
 
 # ==================== MODELS TESTS ====================
@@ -136,6 +139,7 @@ class ChatMessageModelTest(TestCase):
 
 class HomeViewTest(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = Client()
         self.event = Event.objects.create(
             name='Тестовый Кубок',
@@ -152,6 +156,7 @@ class HomeViewTest(TestCase):
 
     def test_home_without_event(self):
         Event.objects.all().delete()
+        cache.clear()
         response = self.client.get(reverse('core:home'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Мероприятий пока нет')
@@ -159,6 +164,7 @@ class HomeViewTest(TestCase):
 
 class CaseListViewTest(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = Client()
 
         # Ивент, где кейсы ЗАКРЫТЫ (дата в будущем)
@@ -268,6 +274,7 @@ class TeamChatTest(TestCase):
 
 class StatisticsViewTest(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = Client()
         self.user = User.objects.create_user(username='captain', password='pass123')
         self.event = Event.objects.create(
