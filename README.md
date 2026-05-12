@@ -10,7 +10,7 @@
     <img src="https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=flat-square&logo=bootstrap" alt="Bootstrap 5">
     <img src="https://img.shields.io/badge/license-GPLv3-green?style=flat-square" alt="License GPLv3">
     <a href="https://github.com/kite-house/DevDash/actions/workflows/django-tests.yml">
-      <img src="https://github.com/твой-юзер/devdash/actions/workflows/django-tests.yml/badge.svg" alt="CI Status">
+      <img src="https://github.com/kite-house/DevDash/actions/workflows/django-tests.yml/badge.svg" alt="CI Status">
     </a>
   </p>
 </div>
