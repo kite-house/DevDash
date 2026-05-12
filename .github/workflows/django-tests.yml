@@ -2,7 +2,7 @@ name: 🧪 Django Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
     branches: [ main ]
 
@@ -14,6 +14,9 @@ env:
   DB_PASS: postgres
   DB_HOST: localhost
   DB_PORT: 5432
+  REDIS_HOST: localhost
+  REDIS_PORT: 6379
+  REDIS_DB: 0
 
 jobs:
   test:
@@ -31,6 +34,16 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d devdash"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
