@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Статистика | IT-Кубок{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">📊 Статистика турнира</h2>
+
+    {% if event %}
+    <h4 class="text-muted mb-4">{{ event.name }}</h4>
+    {% endif %}
+
+    {% if stats %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Команда</th>
+                    <th>Капитан</th>
+                    <th>Кейс</th>
+                    <th>Статус</th>
+                    <th>Контрольные точки</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in stats %}
+                <tr>
+                    <td>{{ stat.team.name }}</td>
+                    <td>{{ stat.team.captain_name }}</td>
+                    <td>{{ stat.team.selected_case.title|default:"Не выбран" }}</td>
+                    <td>
+                        {% if stat.is_active %}
+                        <span class="badge bg-success">В игре</span>
+                        {% else %}
+                        <span class="badge bg-danger">Выбыла</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ stat.passed }} / {{ stat.total }}
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" 
+                                 style="width: {% widthratio stat.passed stat.total 100 %}%">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">Нет зарегистрированных команд.</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -42,6 +42,7 @@ class Case(models.Model):
 class Team(models.Model):
     """Команда участников"""
     name = models.CharField("Название команды", max_length=100)
+    captain_name = models.CharField("ФИО капитана", max_length=200, default='')
     captain = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

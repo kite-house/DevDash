@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Кейсы | IT-Кубок{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">📋 Доступные кейсы</h2>
+
+    {% if event %}
+    <p class="text-muted">{{ event.name }}</p>
+    {% endif %}
+
+    {% if cases %}
+    <div class="row">
+        {% for case in cases %}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ case.title }}</h5>
+                    <p class="card-text">{{ case.description|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">Кейсы пока не добавлены.</div>
+    {% endif %}
+</div>
+{% endblock %}

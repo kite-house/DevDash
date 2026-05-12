@@ -1,0 +1,39 @@
+from django import forms
+from .models import Team, Case, Event
+
+class TeamRegistrationForm(forms.ModelForm):
+    captain_name = forms.CharField(
+        label="ФИО капитана",
+        max_length=200,
+        widget=forms.TextInput(attrs={'placeholder': 'Иванов Иван Иванович'})
+    )
+
+    class Meta:
+        model = Team
+        fields = ['name', 'selected_case', 'event']
+        labels = {
+            'name': 'Название команды',
+            'selected_case': 'Выберите кейс',
+            'event': 'Мероприятие',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Введите название команды'}),
+            'event': forms.HiddenInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        event = kwargs.pop('event', None)
+        can_view_cases = kwargs.pop('can_view_cases', False)
+        super().__init__(*args, **kwargs)
+
+        if event:
+            self.fields['event'].initial = event
+            self.fields['selected_case'].queryset = Case.objects.filter(event=event)
+
+        if not can_view_cases:
+            self.fields['selected_case'].widget = forms.HiddenInput()
+            self.fields['selected_case'].required = False
+            self.fields['selected_case'].help_text = 'Кейсы будут доступны за 2 дня до мероприятия'
+        else:
+            self.fields['selected_case'].required = False
+            self.fields['selected_case'].help_text = 'Можно выбрать позже'
