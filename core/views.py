@@ -2,25 +2,32 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.core.cache import cache
+from django.conf import settings
 from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus, ChatMessage
 from .forms import TeamRegistrationForm, ChatMessageForm
 
 
 def home(request):
-    """Главная страница с информацией о ближайшем кубке"""
-    event = Event.objects.first()
-    now = timezone.now()
-    can_view = (event and now >= event.cases_visible_date)
+    """Главная страница с кешированием"""
+    cache_key = "home_page"
+    context = cache.get(cache_key)
 
-    context = {
-        'event': event,
-        'can_view_cases': can_view,
-    }
+    if context is None:
+        event = Event.objects.first()
+        now = timezone.now()
+        can_view = (event and now >= event.cases_visible_date)
+        context = {
+            'event': event,
+            'can_view_cases': can_view,
+        }
+        cache.set(cache_key, context, timeout=settings.CACHE_TTL["home"])
+
     return render(request, 'core/home.html', context)
 
 
 def case_list(request):
-    """Список кейсов (доступен только когда откроют)"""
+    """Список кейсов с кешированием"""
     event = Event.objects.first()
     now = timezone.now()
 
@@ -28,7 +35,13 @@ def case_list(request):
         messages.warning(request, 'Кейсы будут доступны за 2 дня до мероприятия!')
         return redirect('core:home')
 
-    cases = Case.objects.filter(event=event)
+    cache_key = f"case_list_{event.id}"
+    cases = cache.get(cache_key)
+
+    if cases is None:
+        cases = list(Case.objects.filter(event=event))
+        cache.set(cache_key, cases, timeout=settings.CACHE_TTL["case_list"])
+
     return render(request, 'core/case_list.html', {'cases': cases, 'event': event})
 
 
@@ -62,6 +75,10 @@ def register_team(request):
             team.captain_name = form.cleaned_data['captain_name']
             team.save()
             form.save_m2m()
+
+            # Инвалидируем кеш статистики
+            cache.delete(f"statistics_{event.id}")
+
             messages.success(request, f'Команда «{team.name}» успешно зарегистрирована!')
             return redirect('core:team_detail', team_id=team.id)
     else:
@@ -76,7 +93,7 @@ def register_team(request):
 
 @login_required
 def team_detail(request, team_id):
-    """Страница команды (личный кабинет)"""
+    """Страница команды"""
     team = get_object_or_404(Team, id=team_id)
 
     if request.user != team.captain and request.user not in team.members.all():
@@ -87,23 +104,44 @@ def team_detail(request, team_id):
 
 
 def statistics(request):
-    """Статистика турнира: выбывшие и активные команды"""
+    """Статистика с кешированием"""
     event = Event.objects.first()
-    teams = Team.objects.filter(event=event) if event else Team.objects.none()
-    checkpoints = CheckPoint.objects.filter(event=event).order_by('order') if event else []
 
-    stats = []
-    for team in teams:
-        passed_count = TeamCheckPointStatus.objects.filter(
-            team=team, is_passed=True
-        ).count()
-        total_count = checkpoints.count()
-        stats.append({
-            'team': team,
-            'passed': passed_count,
-            'total': total_count,
-            'is_active': team.is_active,
+    if not event:
+        return render(request, 'core/statistics.html', {
+            'stats': [],
+            'checkpoints': [],
+            'event': None,
         })
+
+    cache_key = f"statistics_{event.id}"
+    cached_data = cache.get(cache_key)
+
+    if cached_data:
+        stats = cached_data['stats']
+        checkpoints = cached_data['checkpoints']
+    else:
+        teams = Team.objects.filter(event=event)
+        checkpoints = list(CheckPoint.objects.filter(event=event).order_by('order'))
+
+        stats = []
+        for team in teams:
+            passed_count = TeamCheckPointStatus.objects.filter(
+                team=team, is_passed=True
+            ).count()
+            total_count = len(checkpoints)
+            stats.append({
+                'team': team,
+                'passed': passed_count,
+                'total': total_count,
+                'is_active': team.is_active,
+            })
+
+        cache.set(
+            cache_key,
+            {'stats': stats, 'checkpoints': checkpoints},
+            timeout=settings.CACHE_TTL["statistics"]
+        )
 
     return render(request, 'core/statistics.html', {
         'stats': stats,
@@ -111,9 +149,10 @@ def statistics(request):
         'event': event,
     })
 
+
 @login_required
 def team_chat(request, team_id):
-    """Чат поддержки для команды"""
+    """Чат поддержки"""
     team = get_object_or_404(Team, id=team_id)
 
     if request.user != team.captain and request.user not in team.members.all() and not request.user.is_staff:

@@ -2,6 +2,7 @@ import openpyxl
 from django.http import HttpResponse
 from django.contrib import admin
 from django.utils import timezone
+from django.core.cache import cache
 
 from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus, ChatMessage
 
@@ -41,6 +42,11 @@ class EventAdmin(admin.ModelAdmin):
         }),
     )
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        cache.delete("home_page")
+        cache.delete(f"case_list_{obj.id}")
+        cache.delete(f"statistics_{obj.id}")
 
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
@@ -106,6 +112,24 @@ class TeamAdmin(admin.ModelAdmin):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         wb.save(response)
         return response
+    
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if obj.event:
+            cache.delete(f"statistics_{obj.event.id}")
+
+    def delete_model(self, request, obj):
+        event_id = obj.event.id if obj.event else None
+        super().delete_model(request, obj)
+        if event_id:
+            cache.delete(f"statistics_{event_id}")
+
+    def delete_queryset(self, request, queryset):
+        event_ids = list(queryset.values_list('event_id', flat=True).distinct())
+        super().delete_queryset(request, queryset)
+        for event_id in event_ids:
+            if event_id:
+                cache.delete(f"statistics_{event_id}")
 
 
 @admin.register(CheckPoint)
