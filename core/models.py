@@ -124,3 +124,28 @@ class TeamCheckPointStatus(models.Model):
     def __str__(self):
         status = "✅" if self.is_passed else "❌"
         return f"{self.team.name} — {self.checkpoint.name} {status}"
+
+class ChatMessage(models.Model):
+    """Сообщение в чате поддержки команды"""
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name='chat_messages',
+        verbose_name="Команда"
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Отправитель"
+    )
+    text = models.TextField("Сообщение")
+    is_admin = models.BooleanField("От администратора", default=False)
+    created_at = models.DateTimeField("Время", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Сообщение чата"
+        verbose_name_plural = "Сообщения чата"
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.sender.username} → {self.team.name}: {self.text[:30]}"
