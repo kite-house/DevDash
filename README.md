@@ -56,49 +56,27 @@
 
 1. **Клонируйте репозиторий**
    ```bash
-   git clone https://github.com/твой-юзер/devdash.git
-   cd devdash
+   git clone https://github.com/kite-house/DevDash.git
+   cd DevDash
    ```
 
 2. **Настройте переменные окружения**
-
-   Скопируйте файл с примером конфигурации:
    ```bash
    cp .env.example .env
    ```
 
-   Минимально необходимые настройки:
-   ```ini
-   # Django
-   SECRET_KEY = "change-me-in-production"
-   DEBUG = True
-
-   # PostgreSQL
-   DB_NAME = "devdash"
-   DB_USER = "postgres"
-   DB_PASS = "postgres"
-   DB_HOST = "postgres_db"
-   DB_PORT = "5432"
-
-   # Redis
-   REDIS_HOST = "redis"
-   REDIS_PORT = "6379"
-   REDIS_DB = "0"
+3. **Запустите все сервисы** (миграции применятся автоматически)
+   ```bash
+   docker compose up -d --build
    ```
 
-3. **Запустите все сервисы**
+4. **Создайте администратора**
    ```bash
-   docker-compose up -d --build
-   ```
-
-4. **Примените миграции и создайте администратора**
-   ```bash
-   docker-compose exec app python manage.py migrate
-   docker-compose exec app python manage.py createsuperuser
+   docker compose exec app python manage.py createsuperuser
    ```
 
 5. **Проверьте работу**
-   - Главная страница: http://localhost:8000
+   - Главная: http://localhost:8000
    - Админ-панель: http://localhost:8000/admin
    - Статистика: http://localhost:8000/statistics
 
@@ -150,6 +128,23 @@
 4. Файл `.xlsx` скачается автоматически
 
 ## 🧩 Архитектура
+
+### 🐳 Сервисы Docker Compose
+
+```
+docker compose up -d
+├── app           — Django (проброс кода через volumes)
+├── postgres_db   — PostgreSQL 17.4 (health check: pg_isready)
+├── redis         — Redis 7 (health check: PING)
+└── migrations    — одноразовый контейнер: применяет миграции и завершается
+```
+
+| Сервис | Назначение | Health Check |
+|--------|------------|--------------|
+| `app` | Django-приложение | — |
+| `postgres_db` | База данных | `pg_isready` |
+| `redis` | Кеш и сессии | `redis-cli ping` |
+| `migrations` | Применение миграций | Отрабатывает и завершается |
 
 ### Модели данных
 
@@ -221,7 +216,7 @@ docker-compose exec app python manage.py test core.tests.CaseListViewTest
 devdash/
 ├── .github/
 │   └── workflows/
-│       └── django-tests.yml        # GitHub Actions CI
+│       └── django-tests.yml         # GitHub Actions CI
 ├── accounts/                        # Приложение аутентификации
 │   ├── urls.py                      # Маршруты login/logout
 │   └── __init__.py
