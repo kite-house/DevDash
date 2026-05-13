@@ -10,41 +10,44 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'core:home' %}">🏆 IT-Кубок</a>
+            <a class="navbar-brand" href="{% url 'home' %}">🏆 IT-Кубок</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:home' %}">Главная</a>
+                        <a class="nav-link" href="{% url 'home' %}">Главная</a>
                     </li>
                     {% if can_view_cases %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:case_list' %}">Кейсы</a>
+                        <a class="nav-link" href="{% url 'case_list' %}">Кейсы</a>
                     </li>
                     {% endif %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:statistics' %}">Статистика</a>
+                        <a class="nav-link" href="{% url 'statistics' %}">Статистика</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:register_team' %}">Регистрация команды</a>
-                    </li>
-                    <li class="nav-item">
-                        <span class="nav-link text-light">{{ user.username }}</span>
-                    </li>
-                    <li class="nav-item">
-                        <form method="post" action="{% url 'logout' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-link btn btn-link" style="text-decoration:none; padding:0; display:inline;">
-                                Выйти
-                            </button>
-                        </form>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register_team' %}">Регистрация команды</a>
+                        </li>
+                        <li class="nav-item">
+                            <span class="nav-link text-light">{{ user.username }}</span>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <form method="post" action="{% url 'logout' %}" class="mb-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link nav-link border-0 p-0">
+                                    Выйти
+                                </button>
+                            </form>
+                        </li>
                     {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">Регистрация</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'login' %}">Войти</a>
                     </li>

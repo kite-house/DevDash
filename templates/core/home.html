@@ -22,7 +22,7 @@
 
                     {% if event.registration_open %}
                         {% if user.is_authenticated %}
-                        <a href="{% url 'core:register_team' %}" class="btn btn-success btn-lg">
+                        <a href="{% url 'register_team' %}" class="btn btn-success btn-lg">
                             Зарегистрировать команду
                         </a>
                         {% else %}
@@ -37,7 +37,7 @@
             </div>
 
             {% if can_view_cases %}
-            <a href="{% url 'core:case_list' %}" class="btn btn-outline-primary btn-lg">
+            <a href="{% url 'case_list' %}" class="btn btn-outline-primary btn-lg">
                 📋 Смотреть кейсы
             </a>
             {% else %}
@@ -46,12 +46,14 @@
             </div>
             {% endif %}
 
-            {% else %}
+        {% else %}
             <div class="alert alert-warning">
-                Мероприятий пока нет. Создайте первое мероприятие в админ-панели.
+                Мероприятий пока нет.
             </div>
+        {% if user.is_staff %}
             <a href="/admin/" class="btn btn-primary">Перейти в админ-панель</a>
-            {% endif %}
+        {% endif %}
+        {% endif %}
         </div>
     </div>
 </div>

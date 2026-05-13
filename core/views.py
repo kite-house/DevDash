@@ -33,7 +33,7 @@ def case_list(request):
 
     if not event or now < event.cases_visible_date:
         messages.warning(request, 'Кейсы будут доступны за 2 дня до мероприятия!')
-        return redirect('core:home')
+        return redirect('home')
 
     cache_key = f"case_list_{event.id}"
     cases = cache.get(cache_key)
@@ -52,7 +52,7 @@ def register_team(request):
 
     if not event or not event.registration_open:
         messages.error(request, 'Регистрация на мероприятие закрыта.')
-        return redirect('core:home')
+        return redirect('home')
 
     now = timezone.now()
     can_view = (event and now >= event.cases_visible_date)
@@ -60,7 +60,7 @@ def register_team(request):
     existing_team = Team.objects.filter(captain=request.user, event=event).first()
     if existing_team:
         messages.info(request, f'Вы уже зарегистрированы как капитан команды «{existing_team.name}».')
-        return redirect('core:team_detail', team_id=existing_team.id)
+        return redirect('team_detail', team_id=existing_team.id)
 
     if request.method == 'POST':
         form = TeamRegistrationForm(
@@ -80,7 +80,7 @@ def register_team(request):
             cache.delete(f"statistics_{event.id}")
 
             messages.success(request, f'Команда «{team.name}» успешно зарегистрирована!')
-            return redirect('core:team_detail', team_id=team.id)
+            return redirect('team_detail', team_id=team.id)
     else:
         form = TeamRegistrationForm(event=event, can_view_cases=can_view)
 
@@ -98,7 +98,7 @@ def team_detail(request, team_id):
 
     if request.user != team.captain and request.user not in team.members.all():
         messages.error(request, 'У вас нет доступа к этой команде.')
-        return redirect('core:home')
+        return redirect('home')
 
     return render(request, 'core/team_detail.html', {'team': team})
 
@@ -157,7 +157,7 @@ def team_chat(request, team_id):
 
     if request.user != team.captain and request.user not in team.members.all() and not request.user.is_staff:
         messages.error(request, 'У вас нет доступа к этому чату.')
-        return redirect('core:home')
+        return redirect('home')
 
     if request.method == 'POST':
         form = ChatMessageForm(request.POST)
@@ -169,7 +169,7 @@ def team_chat(request, team_id):
                 is_admin=request.user.is_staff
             )
             messages.success(request, 'Сообщение отправлено')
-            return redirect('core:team_chat', team_id=team.id)
+            return redirect('team_chat', team_id=team.id)
     else:
         form = ChatMessageForm()
 
