@@ -56,49 +56,27 @@
 
 1. **Клонируйте репозиторий**
    ```bash
-   git clone https://github.com/твой-юзер/devdash.git
-   cd devdash
+   git clone https://github.com/kite-house/DevDash.git
+   cd DevDash
    ```
 
 2. **Настройте переменные окружения**
-
-   Скопируйте файл с примером конфигурации:
    ```bash
    cp .env.example .env
    ```
 
-   Минимально необходимые настройки:
-   ```ini
-   # Django
-   SECRET_KEY = "change-me-in-production"
-   DEBUG = True
-
-   # PostgreSQL
-   DB_NAME = "devdash"
-   DB_USER = "postgres"
-   DB_PASS = "postgres"
-   DB_HOST = "postgres_db"
-   DB_PORT = "5432"
-
-   # Redis
-   REDIS_HOST = "redis"
-   REDIS_PORT = "6379"
-   REDIS_DB = "0"
+3. **Запустите все сервисы** (миграции применятся автоматически)
+   ```bash
+   docker compose up -d --build
    ```
 
-3. **Запустите все сервисы**
+4. **Создайте администратора**
    ```bash
-   docker-compose up -d --build
-   ```
-
-4. **Примените миграции и создайте администратора**
-   ```bash
-   docker-compose exec app python manage.py migrate
-   docker-compose exec app python manage.py createsuperuser
+   docker compose exec app python manage.py createsuperuser
    ```
 
 5. **Проверьте работу**
-   - Главная страница: http://localhost:8000
+   - Главная: http://localhost:8000
    - Админ-панель: http://localhost:8000/admin
    - Статистика: http://localhost:8000/statistics
 
@@ -114,7 +92,7 @@
 
 ### 👥 Регистрация команды
 
-1. Войдите в систему (или создайте аккаунт через админ-панель)
+1. Войдите в систему или создайте аккаунт
 2. Перейдите на страницу регистрации команды
 3. Введите название команды и ФИО капитана
 4. При желании выберите кейс (если кейсы уже открыты)
@@ -150,6 +128,23 @@
 4. Файл `.xlsx` скачается автоматически
 
 ## 🧩 Архитектура
+
+### 🐳 Сервисы Docker Compose
+
+```
+docker compose up -d
+├── app           — Django (проброс кода через volumes)
+├── postgres_db   — PostgreSQL 17.4 (health check: pg_isready)
+├── redis         — Redis 7 (health check: PING)
+└── migrations    — одноразовый контейнер: применяет миграции и завершается
+```
+
+| Сервис | Назначение | Health Check |
+|--------|------------|--------------|
+| `app` | Django-приложение | — |
+| `postgres_db` | База данных | `pg_isready` |
+| `redis` | Кеш и сессии | `redis-cli ping` |
+| `migrations` | Применение миграций | Отрабатывает и завершается |
 
 ### Модели данных
 
@@ -221,9 +216,10 @@ docker-compose exec app python manage.py test core.tests.CaseListViewTest
 devdash/
 ├── .github/
 │   └── workflows/
-│       └── django-tests.yml        # GitHub Actions CI
+│       └── django-tests.yml         # GitHub Actions CI
 ├── accounts/                        # Приложение аутентификации
 │   ├── urls.py                      # Маршруты login/logout
+│   ├── views.py                     # Представления: register.
 │   └── __init__.py
 ├── core/                            # Основное приложение
 │   ├── models.py                    # Модели: Event, Case, Team, CheckPoint, ChatMessage
@@ -242,7 +238,8 @@ devdash/
 ├── templates/                       # HTML-шаблоны
 │   ├── base.html                    # Базовый шаблон с навигацией
 │   ├── accounts/
-│   │   └── login.html               # Страница входа
+│       ├── login.html               # Страница входа
+│   │   └── register.html            # Страница регистрации
 │   └── core/
 │       ├── home.html                # Главная страница
 │       ├── case_list.html           # Список кейсов
@@ -251,7 +248,6 @@ devdash/
 │       ├── team_chat.html           # Чат поддержки
 │       └── statistics.html          # Статистика турнира
 ├── static/                          # Статические файлы
-├── media/                           # Загружаемые файлы
 ├── .env.example                     # Пример переменных окружения
 ├── .gitignore
 ├── .dockerignore

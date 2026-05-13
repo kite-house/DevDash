@@ -3,13 +3,18 @@ services:
     build: .
     container_name: app
     restart: always
-    volumes: 
-      - .:/app
+    volumes:
+      - ./accounts:/app/accounts
+      - ./core:/app/core
+      - ./devdash:/app/devdash
+      - ./static:/app/static
+      - ./templates:/app/templates
+      - ./manage.py:/app/manage.py
+      - ./requirements.txt:/app/requirements.txt
     env_file:
       - .env
     ports: 
       - 8000:8000
-
     depends_on:
       postgres_db: 
         condition: service_healthy
@@ -48,6 +53,16 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  migrations:
+    build: .
+    container_name: migrations
+    command: python manage.py migrate
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    restart: "no" 
+
 
 volumes:
   postgres_data:
