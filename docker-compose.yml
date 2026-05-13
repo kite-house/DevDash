@@ -49,6 +49,16 @@ services:
       timeout: 3s
       retries: 5
 
+  migrations:
+    build: .
+    container_name: migrations
+    command: python manage.py migrate
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    restart: "no" 
+
+
 volumes:
   postgres_data:
   redis_data:
