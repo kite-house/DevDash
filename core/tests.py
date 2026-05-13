@@ -149,7 +149,7 @@ class HomeViewTest(TestCase):
         )
 
     def test_home_page_status(self):
-        response = self.client.get(reverse('core:home'))
+        response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Тестовый Кубок')
         self.assertTemplateUsed(response, 'core/home.html')
@@ -157,7 +157,7 @@ class HomeViewTest(TestCase):
     def test_home_without_event(self):
         Event.objects.all().delete()
         cache.clear()
-        response = self.client.get(reverse('core:home'))
+        response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Мероприятий пока нет')
 
@@ -187,7 +187,7 @@ class CaseListViewTest(TestCase):
 
     def test_cases_hidden_when_not_visible(self):
         """Кейсы не видны до cases_visible_date"""
-        response = self.client.get(reverse('core:case_list'))
+        response = self.client.get(reverse('case_list'))
         # Редиректит на home, потому что берётся Event.objects.first()
         # (закрытый ивент первый)
         self.assertEqual(response.status_code, 302)
@@ -195,7 +195,7 @@ class CaseListViewTest(TestCase):
     def test_cases_visible_after_date(self):
         """Кейсы видны после cases_visible_date (удаляем закрытый ивент)"""
         self.event_closed.delete()
-        response = self.client.get(reverse('core:case_list'))
+        response = self.client.get(reverse('case_list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Открытый кейс')
 
@@ -213,12 +213,12 @@ class TeamRegistrationTest(TestCase):
         self.case = Case.objects.create(title='Кейс 1', event=self.event)
 
     def test_redirect_if_not_logged_in(self):
-        response = self.client.get(reverse('core:register_team'))
+        response = self.client.get(reverse('register_team'))
         self.assertEqual(response.status_code, 302)
 
     def test_register_team_success(self):
         self.client.login(username='captain', password='pass123')
-        response = self.client.post(reverse('core:register_team'), {
+        response = self.client.post(reverse('register_team'), {
             'name': 'Новая команда',
             'captain_name': 'Иванов Иван',
             'selected_case': self.case.id,
@@ -231,7 +231,7 @@ class TeamRegistrationTest(TestCase):
         self.event.registration_open = False
         self.event.save()
         self.client.login(username='captain', password='pass123')
-        response = self.client.get(reverse('core:register_team'))
+        response = self.client.get(reverse('register_team'))
         self.assertEqual(response.status_code, 302)  # Редирект на home
 
 
@@ -255,17 +255,17 @@ class TeamChatTest(TestCase):
 
     def test_chat_access_for_captain(self):
         self.client.login(username='captain', password='pass123')
-        response = self.client.get(reverse('core:team_chat', args=[self.team.id]))
+        response = self.client.get(reverse('team_chat', args=[self.team.id]))
         self.assertEqual(response.status_code, 200)
 
     def test_chat_access_denied_for_outsider(self):
         self.client.login(username='other', password='pass123')
-        response = self.client.get(reverse('core:team_chat', args=[self.team.id]))
+        response = self.client.get(reverse('team_chat', args=[self.team.id]))
         self.assertEqual(response.status_code, 302)
 
     def test_send_message(self):
         self.client.login(username='captain', password='pass123')
-        response = self.client.post(reverse('core:team_chat', args=[self.team.id]), {
+        response = self.client.post(reverse('team_chat', args=[self.team.id]), {
             'text': 'Тестовое сообщение'
         })
         self.assertEqual(response.status_code, 302)
@@ -300,7 +300,7 @@ class StatisticsViewTest(TestCase):
         self.cp = CheckPoint.objects.create(event=self.event, name='КП 1', order=1)
 
     def test_statistics_page(self):
-        response = self.client.get(reverse('core:statistics'))
+        response = self.client.get(reverse('statistics'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Активная команда')
         self.assertContains(response, 'Выбывшая команда')
