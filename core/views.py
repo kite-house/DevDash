@@ -4,8 +4,9 @@ from django.contrib import messages
 from django.utils import timezone
 from django.core.cache import cache
 from django.conf import settings
-from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus, ChatMessage
-from .forms import TeamRegistrationForm, ChatMessageForm
+
+from .models import Event, Case, Team, CheckPoint, TeamCheckPointStatus, ChatMessage, User
+from .forms import TeamRegistrationForm, ChatMessageForm, AddMemberForm
 
 
 def home(request):
@@ -76,7 +77,6 @@ def register_team(request):
             team.save()
             form.save_m2m()
 
-            # Инвалидируем кеш статистики
             cache.delete(f"statistics_{event.id}")
 
             messages.success(request, f'Команда «{team.name}» успешно зарегистрирована!')
@@ -180,3 +180,52 @@ def team_chat(request, team_id):
         'chat_messages': messages_qs,
         'form': form,
     })
+
+
+@login_required
+def manage_team(request, team_id):
+    """Управление командой: добавление/удаление участников"""
+    team = get_object_or_404(Team, id=team_id)
+
+    if request.user != team.captain:
+        messages.error(request, 'Только капитан может управлять составом команды.')
+        return redirect('team_detail', team_id=team.id)
+
+    if request.method == 'POST':
+        form = AddMemberForm(request.POST, team=team)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            new_member = User.objects.get(username=username)
+            team.members.add(new_member)
+            messages.success(request, f'Участник {username} добавлен в команду!')
+            return redirect('manage_team', team_id=team.id)
+    else:
+        form = AddMemberForm(team=team)
+
+    members = team.members.all()
+
+    return render(request, 'core/manage_team.html', {
+        'team': team,
+        'members': members,
+        'form': form,
+    })
+
+
+@login_required
+def remove_member(request, team_id, user_id):
+    """Удаление участника из команды"""
+    team = get_object_or_404(Team, id=team_id)
+
+    if request.user != team.captain:
+        messages.error(request, 'Только капитан может удалять участников.')
+        return redirect('team_detail', team_id=team.id)
+
+    member = get_object_or_404(User, id=user_id)
+
+    if member in team.members.all():
+        team.members.remove(member)
+        messages.success(request, f'Участник {member.username} удалён из команды.')
+    else:
+        messages.error(request, 'Этот пользователь не состоит в команде.')
+
+    return redirect('manage_team', team_id=team.id)

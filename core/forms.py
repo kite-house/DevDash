@@ -48,3 +48,32 @@ class ChatMessageForm(forms.Form):
             'class': 'form-control'
         })
     )
+
+class AddMemberForm(forms.Form):
+    """Форма добавления участника в команду"""
+    username = forms.CharField(
+        label="Имя пользователя",
+        max_length=150,
+        widget=forms.TextInput(attrs={'placeholder': 'Введите username участника'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.team = kwargs.pop('team', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_username(self):
+        from django.contrib.auth.models import User
+        username = self.cleaned_data['username']
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise forms.ValidationError('Пользователь с таким именем не найден. Попросите его зарегистрироваться.')
+
+        if self.team and user in self.team.members.all():
+            raise forms.ValidationError('Этот пользователь уже в команде.')
+
+        if self.team and user == self.team.captain:
+            raise forms.ValidationError('Капитан уже в команде.')
+
+        return username
